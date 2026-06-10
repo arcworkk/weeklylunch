@@ -1,0 +1,26 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: weeklylunch-backend
+    environment:
+      DATABASE_URL: "file:/data/dev.db"
+      JWT_SECRET: "change-me-in-production"
+      PORT: "3001"
+      SEED_ON_START: "false"
+    ports:
+      - "3001:3001"
+    volumes:
+      - weeklylunch-sqlite:/data
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: weeklylunch-frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  weeklylunch-sqlite:

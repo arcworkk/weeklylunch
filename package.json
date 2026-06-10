@@ -1,0 +1,16 @@
+{
+  "name": "weeklylunch",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Application web de meal prep hebdomadaire.",
+  "scripts": {
+    "install:all": "npm install --prefix backend && npm install --prefix frontend",
+    "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
+    "docker:seed": "docker compose exec backend npm run prisma:seed"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
