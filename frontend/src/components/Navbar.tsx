@@ -1,13 +1,16 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { User } from "../types/auth";
+import { MoonIcon, SunIcon } from "./ActionIcons";
 
 type NavbarProps = {
   user: User | null;
   isAdmin: boolean;
+  theme: "light" | "dark";
+  onToggleTheme: () => void;
   onLogout: () => void;
 };
 
-export const Navbar = ({ user, isAdmin, onLogout }: NavbarProps) => {
+export const Navbar = ({ user, isAdmin, theme, onToggleTheme, onLogout }: NavbarProps) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -42,6 +45,15 @@ export const Navbar = ({ user, isAdmin, onLogout }: NavbarProps) => {
             <NavLink to="/register">Register</NavLink>
           </>
         )}
+        <button
+          type="button"
+          className="theme-toggle icon-button"
+          aria-label={theme === "dark" ? "Activer le mode clair" : "Activer le mode sombre"}
+          title={theme === "dark" ? "Mode clair" : "Mode sombre"}
+          onClick={onToggleTheme}
+        >
+          {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+        </button>
       </nav>
     </header>
   );

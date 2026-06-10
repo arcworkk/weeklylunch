@@ -1,6 +1,7 @@
 import { PrepSummary } from "../types/prepSummary";
 import { formatDuration } from "../utils/formatDuration";
 import { IngredientList } from "./IngredientList";
+import { Link } from "react-router-dom";
 
 type WeeklyPrepSummaryProps = {
   summary: PrepSummary | null;
@@ -25,7 +26,7 @@ export const WeeklyPrepSummary = ({ summary }: WeeklyPrepSummaryProps) => {
           <article className="summary-recipe" key={recipe.recipeId}>
             <div className="card-header">
               <div>
-                <h3>{recipe.recipeTitle}</h3>
+                <h3><Link to={`/recipes/${recipe.recipeId}`}>{recipe.recipeTitle}</Link></h3>
                 <p className="muted">
                   {recipe.totalServings} portions · Prep{" "}
                   {formatDuration(recipe.prepTimeMinutes)} · Cuisson{" "}

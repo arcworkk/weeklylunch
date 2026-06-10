@@ -7,6 +7,7 @@ if [[ $# -ne 1 ]]; then
 fi
 
 BACKUP_FILE="$(realpath "$1")"
+MEDIA_BACKUP_DIR="${BACKUP_FILE%.db}-uploads"
 
 if [[ ! -f "${BACKUP_FILE}" ]]; then
   echo "Backup not found: ${BACKUP_FILE}" >&2
@@ -43,4 +44,13 @@ docker compose -f "${COMPOSE_FILE}" cp "${BACKUP_FILE}" backend:/data/weeklylunc
 docker compose -f "${COMPOSE_FILE}" run --rm --no-deps backend \
   sh -c "rm -f /data/weeklylunch.db-wal /data/weeklylunch.db-shm /data/weeklylunch.db-journal"
 
+if [[ -d "${MEDIA_BACKUP_DIR}" ]]; then
+  docker compose -f "${COMPOSE_FILE}" run --rm --no-deps backend \
+    sh -c "rm -rf /data/uploads && mkdir -p /data/uploads"
+  docker compose -f "${COMPOSE_FILE}" cp "${MEDIA_BACKUP_DIR}/." backend:/data/uploads
+fi
+
 echo "Database restored from: ${BACKUP_FILE}"
+if [[ -d "${MEDIA_BACKUP_DIR}" ]]; then
+  echo "Media restored from: ${MEDIA_BACKUP_DIR}"
+fi

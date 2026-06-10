@@ -160,7 +160,7 @@ Creer un backup date dans `backups/`:
 ./deploy/scripts/backup-sqlite.sh
 ```
 
-Le backend est arrete quelques secondes pendant la copie afin de garantir la coherence SQLite. Aucun backup n'est supprime automatiquement. Copier regulierement les sauvegardes hors du VPS.
+Le backend est arrete quelques secondes pendant la copie afin de garantir la coherence SQLite. Le script cree le fichier `.db` et, lorsque des miniatures ou pieces jointes existent, un dossier `weeklylunch-...-uploads` avec le meme horodatage. Aucun backup n'est supprime automatiquement. Copier regulierement le fichier et son dossier de medias hors du VPS.
 
 Restaurer un backup:
 
@@ -168,7 +168,7 @@ Restaurer un backup:
 ./deploy/scripts/restore-sqlite.sh backups/weeklylunch-YYYYMMDDTHHMMSSZ.db
 ```
 
-Le script demande de saisir `RESTORE` avant de remplacer la base.
+Le script demande de saisir `RESTORE` avant de remplacer la base. S'il trouve le dossier `-uploads` associe au backup, il restaure aussi les miniatures et pieces jointes.
 
 Ne jamais executer `docker compose -f docker-compose.prod.yml down -v` sans backup: l'option `-v` supprime le volume SQLite.
 
@@ -214,5 +214,5 @@ docker volume inspect weeklylunch-prod-sqlite
 - `ss -lntp` montre 3001 et 8081 uniquement sur `127.0.0.1`
 - seuls 22, 80 et 443 sont autorises dans IONOS et UFW
 - `/api/health` fonctionne via Nginx
-- un backup SQLite a ete cree et copie hors du VPS
+- un backup SQLite et son eventuel dossier de medias ont ete crees et copies hors du VPS
 - Prisma Studio n'est ni lance ni expose

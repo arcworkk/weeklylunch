@@ -1,8 +1,10 @@
+import { Link } from "react-router-dom";
 import { Meal } from "../types/meal";
 import { formatDuration } from "../utils/formatDuration";
 import { DeleteIcon } from "./ActionIcons";
 import { EditIcon } from "./EditIcon";
 import { ScaledIngredients } from "./ScaledIngredients";
+import { AuthenticatedImage } from "./AuthenticatedImage";
 
 type MealCardProps = {
   meal: Meal;
@@ -14,12 +16,15 @@ export const MealCard = ({ meal, onEdit, onDelete }: MealCardProps) => {
   const totalTime = meal.recipe.prepTimeMinutes + meal.recipe.cookTimeMinutes;
 
   return (
-    <article className="card">
+    <article className="card meal-card">
+      <Link className="meal-card-media" to={`/recipes/${meal.recipe.id}`} aria-label={`Voir ${meal.recipe.title}`}>
+        <AuthenticatedImage src={meal.recipe.thumbnailUrl} alt={meal.recipe.title} />
+      </Link>
       <div className="card-header">
         <div>
           <h3>{meal.title}</h3>
           <p className="muted">
-            {meal.recipe.title} · {meal.desiredServings} portion
+            <Link to={`/recipes/${meal.recipe.id}`}>{meal.recipe.title}</Link> · {meal.desiredServings} portion
             {meal.desiredServings > 1 ? "s" : ""}
           </p>
           <p className="muted">

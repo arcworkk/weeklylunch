@@ -7,7 +7,7 @@ import { RecipeList } from "../components/RecipeList";
 import { SearchFilter } from "../components/SearchFilter";
 import { useConfirm } from "../hooks/useConfirm";
 import { recipeService } from "../services/recipeService";
-import { Recipe, RecipeInput } from "../types/recipe";
+import { Recipe, RecipeSubmission } from "../types/recipe";
 
 export const RecipesPage = () => {
   const pageSize = 5;
@@ -84,15 +84,15 @@ export const RecipesPage = () => {
     setCurrentPage((page) => Math.min(page, lastPage));
   }, [filteredRecipes.length]);
 
-  const handleSubmit = async (recipe: RecipeInput) => {
+  const handleSubmit = async (submission: RecipeSubmission) => {
     setSaving(true);
     setError("");
 
     try {
       if (editingRecipe) {
-        await recipeService.updateRecipe(editingRecipe.id, recipe);
+        await recipeService.updateRecipe(editingRecipe.id, submission);
       } else {
-        await recipeService.createRecipe(recipe);
+        await recipeService.createRecipe(submission);
       }
 
       setEditingRecipe(null);

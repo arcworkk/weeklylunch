@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 import { getAdminEmail } from "../middlewares/adminMiddleware";
 import { prisma } from "../utils/prisma";
+import { removeStoredRecipeFiles } from "../utils/recipeMedia";
 
 type ImportedIngredient = {
   name?: unknown;
@@ -247,7 +248,21 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
       throw makeError("The configured admin user cannot be deleted", 400);
     }
 
+    const recipes = await prisma.recipe.findMany({
+      where: { userId: user.id },
+      select: {
+        thumbnailStoredName: true,
+        attachments: { select: { storedName: true } }
+      }
+    });
+
     await prisma.user.delete({ where: { id: user.id } });
+    await removeStoredRecipeFiles(
+      recipes.flatMap((recipe) => [
+        recipe.thumbnailStoredName,
+        ...recipe.attachments.map((attachment) => attachment.storedName)
+      ])
+    );
     res.status(204).send();
   } catch (error) {
     next(error);

@@ -14,15 +14,17 @@ export const clearAuthToken = () => {
 
 type ApiOptions = Omit<RequestInit, "body"> & {
   body?: BodyInit | object | null;
+  timeoutMs?: number;
 };
 
 export const apiRequest = async <T>(path: string, options: ApiOptions = {}) => {
+  const { timeoutMs = API_TIMEOUT_MS, ...requestOptions } = options;
   const token = getAuthToken();
   const headers = new Headers(options.headers);
   const isJsonBody =
-    options.body !== undefined &&
-    options.body !== null &&
-    !(options.body instanceof FormData);
+    requestOptions.body !== undefined &&
+    requestOptions.body !== null &&
+    !(requestOptions.body instanceof FormData);
 
   if (!headers.has("Content-Type") && isJsonBody) {
     headers.set("Content-Type", "application/json");
@@ -35,19 +37,19 @@ export const apiRequest = async <T>(path: string, options: ApiOptions = {}) => {
   const timeoutController = new AbortController();
   const timeoutId = window.setTimeout(
     () => timeoutController.abort(),
-    API_TIMEOUT_MS
+    timeoutMs
   );
 
   let response: Response;
 
   try {
     response = await fetch(`${API_URL}${path}`, {
-      ...options,
+      ...requestOptions,
       headers,
-      signal: options.signal ?? timeoutController.signal,
+      signal: requestOptions.signal ?? timeoutController.signal,
       body: isJsonBody
-        ? JSON.stringify(options.body)
-        : (options.body as BodyInit | null | undefined)
+        ? JSON.stringify(requestOptions.body)
+        : (requestOptions.body as BodyInit | null | undefined)
     });
   } catch (error) {
     if (timeoutController.signal.aborted) {
@@ -70,4 +72,25 @@ export const apiRequest = async <T>(path: string, options: ApiOptions = {}) => {
   }
 
   return data as T;
+};
+
+export const apiBlob = async (path: string, timeoutMs = 30000) => {
+  const token = getAuthToken();
+  const timeoutController = new AbortController();
+  const timeoutId = window.setTimeout(() => timeoutController.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(`${API_URL}${path}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      signal: timeoutController.signal
+    });
+
+    if (!response.ok) {
+      throw new Error("Le fichier n'est pas disponible.");
+    }
+
+    return response.blob();
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
 };

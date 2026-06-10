@@ -28,12 +28,29 @@ model Recipe {
   instructions    String
   prepTimeMinutes Int
   cookTimeMinutes Int
+  thumbnailStoredName   String?
+  thumbnailOriginalName String?
+  thumbnailMimeType     String?
   ingredients     Ingredient[]
+  attachments     RecipeAttachment[]
   meals           Meal[]
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
   @@index([userId])
+}
+
+model RecipeAttachment {
+  id           String   @id @default(cuid())
+  recipeId     String
+  recipe       Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  storedName   String
+  originalName String
+  mimeType     String
+  size         Int
+  createdAt    DateTime @default(now())
+
+  @@index([recipeId])
 }
 
 model Ingredient {

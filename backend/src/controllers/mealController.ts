@@ -1,5 +1,7 @@
+import { Prisma } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 import { prisma } from "../utils/prisma";
+import { recipeInclude, serializeRecipe } from "../utils/recipeMedia";
 
 const makeError = (message: string, status: number) => {
   const error = new Error(message) as Error & { status: number };
@@ -17,13 +19,16 @@ const requireUserId = (req: Request) => {
 
 const mealInclude = {
   recipe: {
-    include: {
-      ingredients: {
-        orderBy: { createdAt: "asc" as const }
-      }
-    }
+    include: recipeInclude
   }
 };
+
+type MealWithRecipe = Prisma.MealGetPayload<{ include: typeof mealInclude }>;
+
+const serializeMeal = (meal: MealWithRecipe) => ({
+  ...meal,
+  recipe: serializeRecipe(meal.recipe)
+});
 
 const parseMealBody = (body: Record<string, unknown>) => {
   const title = String(body.title ?? "").trim();
@@ -58,7 +63,7 @@ export const getMeals = async (
       orderBy: { createdAt: "desc" }
     });
 
-    res.json(meals);
+    res.json(meals.map(serializeMeal));
   } catch (error) {
     next(error);
   }
@@ -80,7 +85,7 @@ export const getMeal = async (
       throw makeError("Meal not found", 404);
     }
 
-    res.json(meal);
+    res.json(serializeMeal(meal));
   } catch (error) {
     next(error);
   }
@@ -107,7 +112,7 @@ export const createMeal = async (
       include: mealInclude
     });
 
-    res.status(201).json(meal);
+    res.status(201).json(serializeMeal(meal));
   } catch (error) {
     next(error);
   }
@@ -143,7 +148,7 @@ export const updateMeal = async (
       include: mealInclude
     });
 
-    res.json(meal);
+    res.json(serializeMeal(meal));
   } catch (error) {
     next(error);
   }

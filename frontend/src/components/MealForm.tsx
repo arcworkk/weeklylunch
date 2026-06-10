@@ -1,6 +1,8 @@
 import { FormEvent, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Meal, MealInput } from "../types/meal";
 import { Recipe } from "../types/recipe";
+import { AuthenticatedImage } from "./AuthenticatedImage";
 
 type MealFormProps = {
   recipes: Recipe[];
@@ -21,6 +23,7 @@ export const MealForm = ({
   const [recipeId, setRecipeId] = useState("");
   const [desiredServings, setDesiredServings] = useState("1");
   const [useRecipeTitle, setUseRecipeTitle] = useState(true);
+  const selectedRecipe = recipes.find((recipe) => recipe.id === recipeId);
 
   useEffect(() => {
     if (initialMeal) {
@@ -84,6 +87,13 @@ export const MealForm = ({
           ))}
         </select>
       </label>
+
+      {selectedRecipe && (
+        <Link className="selected-recipe-preview" to={`/recipes/${selectedRecipe.id}`} target="_blank">
+          <AuthenticatedImage src={selectedRecipe.thumbnailUrl} alt={selectedRecipe.title} />
+          <span><small>Recette selectionnee</small><strong>{selectedRecipe.title}</strong></span>
+        </Link>
+      )}
 
       <label className={`meal-title-mode${useRecipeTitle ? " is-active" : ""}`}>
         <input

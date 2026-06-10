@@ -147,7 +147,7 @@ Docker Compose lance deux conteneurs:
 - `weeklylunch-frontend`: Nginx sert l'application et transmet `/api` au backend
 - `weeklylunch-backend`: API Node.js interne, non exposee directement sur Internet
 
-La base SQLite est conservee dans le volume Docker `weeklylunch-sqlite`. Les migrations Prisma sont appliquees automatiquement au demarrage du backend.
+La base SQLite ainsi que les miniatures et pieces jointes de recettes sont conservees dans le volume Docker `weeklylunch-sqlite`. Les migrations Prisma sont appliquees automatiquement au demarrage du backend.
 
 ## Production VPS
 
@@ -156,7 +156,7 @@ La configuration de production se trouve dans `docker-compose.prod.yml`:
 - frontend lie uniquement a `127.0.0.1:8081`
 - backend lie uniquement a `127.0.0.1:3001`
 - Nginx hote est le seul point d'entree public sur les ports 80 et 443
-- SQLite est conserve dans le volume `weeklylunch-prod-sqlite`
+- SQLite et les medias de recettes sont conserves dans le volume `weeklylunch-prod-sqlite`
 - l'administrateur est cree depuis `ADMIN_EMAIL`, `ADMIN_PASSWORD` et `ADMIN_NAME`
 - aucun compte de test n'est cree automatiquement
 

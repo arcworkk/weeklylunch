@@ -13,11 +13,26 @@ import { RecipesPage } from "./pages/RecipesPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { WeeklyPlannerPage } from "./pages/WeeklyPlannerPage";
 import { AdminPage } from "./pages/AdminPage";
+import { RecipeDetailPage } from "./pages/RecipeDetailPage";
+
+type Theme = "light" | "dark";
+
+const getInitialTheme = (): Theme => {
+  const savedTheme = localStorage.getItem("weeklylunch_theme");
+  if (savedTheme === "light" || savedTheme === "dark") return savedTheme;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+};
 
 export const App = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loadingUser, setLoadingUser] = useState(true);
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("weeklylunch_theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -71,7 +86,13 @@ export const App = () => {
 
   return (
     <>
-      <Navbar user={user} isAdmin={isAdmin} onLogout={handleLogout} />
+      <Navbar
+        user={user}
+        isAdmin={isAdmin}
+        theme={theme}
+        onToggleTheme={() => setTheme((current) => current === "dark" ? "light" : "dark")}
+        onLogout={handleLogout}
+      />
       <Routes>
         <Route
           path="/login"
@@ -122,6 +143,14 @@ export const App = () => {
           element={
             <ProtectedRoute user={user} loading={loadingUser}>
               <PrepSummaryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/recipes/:recipeId"
+          element={
+            <ProtectedRoute user={user} loading={loadingUser}>
+              <RecipeDetailPage />
             </ProtectedRoute>
           }
         />

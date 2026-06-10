@@ -8,6 +8,7 @@ services:
       JWT_SECRET: "${JWT_SECRET:-change-me-in-production}"
       ADMIN_EMAIL: "${ADMIN_EMAIL:-test@weeklylunch.local}"
       PORT: "3001"
+      UPLOAD_DIR: "/data/uploads"
       SEED_ON_START: "${SEED_ON_START:-false}"
     expose:
       - "3001"

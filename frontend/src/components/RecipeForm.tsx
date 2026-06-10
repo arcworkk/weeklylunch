@@ -1,15 +1,17 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useConfirm } from "../hooks/useConfirm";
 import { IngredientInput } from "../types/ingredient";
-import { Recipe, RecipeInput } from "../types/recipe";
-import { AddIcon, DeleteIcon } from "./ActionIcons";
+import { Recipe, RecipeAttachment, RecipeSubmission } from "../types/recipe";
+import { AddIcon, DeleteIcon, ImageIcon, PaperclipIcon } from "./ActionIcons";
+import { AttachmentLink } from "./AttachmentLink";
+import { AuthenticatedImage } from "./AuthenticatedImage";
 
 type RecipeFormProps = {
   initialRecipe?: Recipe | null;
   ingredientSuggestions?: IngredientSuggestion[];
   loading?: boolean;
   onCancel?: () => void;
-  onSubmit: (recipe: RecipeInput) => Promise<void>;
+  onSubmit: (recipe: RecipeSubmission) => Promise<void>;
 };
 
 type FormIngredient = Omit<IngredientInput, "quantity"> & {
@@ -57,6 +59,13 @@ export const RecipeForm = ({
   const [ingredients, setIngredients] = useState<FormIngredient[]>([
     emptyIngredient()
   ]);
+  const [thumbnail, setThumbnail] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [removeThumbnail, setRemoveThumbnail] = useState(false);
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [retainedAttachments, setRetainedAttachments] = useState<RecipeAttachment[]>([]);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
+  const attachmentInputRef = useRef<HTMLInputElement>(null);
   const firstIngredientInputRef = useRef<HTMLInputElement>(null);
   const { confirm, confirmationModal } = useConfirm();
 
@@ -74,6 +83,10 @@ export const RecipeForm = ({
           unit
         }))
       );
+      setRetainedAttachments(initialRecipe.attachments ?? []);
+      setThumbnail(null);
+      setRemoveThumbnail(false);
+      setAttachments([]);
       return;
     }
 
@@ -83,7 +96,22 @@ export const RecipeForm = ({
     setCookTimeMinutes("0");
     setInstructions("");
     setIngredients([emptyIngredient()]);
+    setRetainedAttachments([]);
+    setThumbnail(null);
+    setRemoveThumbnail(false);
+    setAttachments([]);
   }, [initialRecipe]);
+
+  useEffect(() => {
+    if (!thumbnail) {
+      setThumbnailPreview(null);
+      return;
+    }
+
+    const preview = URL.createObjectURL(thumbnail);
+    setThumbnailPreview(preview);
+    return () => URL.revokeObjectURL(preview);
+  }, [thumbnail]);
 
   const updateIngredient = (
     index: number,
@@ -156,16 +184,41 @@ export const RecipeForm = ({
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     await onSubmit({
-      title,
-      baseServings: Number(baseServings),
-      prepTimeMinutes: Number(prepTimeMinutes),
-      cookTimeMinutes: Number(cookTimeMinutes),
-      instructions,
-      ingredients: ingredients.map((ingredient) => ({
-        ...ingredient,
-        quantity: Number(ingredient.quantity)
-      }))
+      recipe: {
+        title,
+        baseServings: Number(baseServings),
+        prepTimeMinutes: Number(prepTimeMinutes),
+        cookTimeMinutes: Number(cookTimeMinutes),
+        instructions,
+        ingredients: ingredients.map((ingredient) => ({
+          ...ingredient,
+          quantity: Number(ingredient.quantity)
+        }))
+      },
+      thumbnail,
+      removeThumbnail,
+      attachments,
+      retainedAttachmentIds: retainedAttachments.map((attachment) => attachment.id)
     });
+  };
+
+  const handleThumbnailChange = (file: File | undefined) => {
+    if (!file) return;
+    setThumbnail(file);
+    setRemoveThumbnail(false);
+  };
+
+  const clearThumbnail = () => {
+    setThumbnail(null);
+    setRemoveThumbnail(true);
+    if (thumbnailInputRef.current) thumbnailInputRef.current.value = "";
+  };
+
+  const addAttachments = (files: FileList | null) => {
+    if (!files) return;
+    const remaining = Math.max(0, 5 - retainedAttachments.length - attachments.length);
+    setAttachments((current) => [...current, ...Array.from(files).slice(0, remaining)]);
+    if (attachmentInputRef.current) attachmentInputRef.current.value = "";
   };
 
   return (
@@ -208,14 +261,102 @@ export const RecipeForm = ({
         </label>
       </div>
 
-      <label>
-        Instructions
+      <section className="recipe-media-editor">
+        <div className="recipe-media-editor-copy">
+          <ImageIcon />
+          <div>
+            <strong>Miniature de la recette</strong>
+            <span>Facultative, image de 10 Mo maximum.</span>
+          </div>
+        </div>
+        <div className="recipe-thumbnail-editor">
+          {thumbnailPreview ? (
+            <img src={thumbnailPreview} alt="Nouvelle miniature" />
+          ) : (
+            <AuthenticatedImage
+              src={!removeThumbnail ? initialRecipe?.thumbnailUrl ?? null : null}
+              alt={initialRecipe?.title ?? "Recette sans image"}
+            />
+          )}
+          <div className="recipe-media-actions">
+            <input
+              ref={thumbnailInputRef}
+              className="visually-hidden"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={(event) => handleThumbnailChange(event.target.files?.[0])}
+            />
+            <button type="button" className="secondary-button" onClick={() => thumbnailInputRef.current?.click()}>
+              Choisir une image
+            </button>
+            {(thumbnailPreview || (!removeThumbnail && initialRecipe?.thumbnailUrl)) && (
+              <button type="button" className="ghost-button" onClick={clearThumbnail}>
+                Retirer
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <label className="instructions-field">
+        <span className="instructions-field-heading">
+          <span>Etapes de realisation</span>
+          <button
+            type="button"
+            className="secondary-button icon-button"
+            aria-label="Ajouter une piece jointe"
+            title="Ajouter une piece jointe"
+            disabled={retainedAttachments.length + attachments.length >= 5}
+            onClick={() => attachmentInputRef.current?.click()}
+          >
+            <PaperclipIcon />
+          </button>
+        </span>
         <textarea
           rows={5}
           value={instructions}
           onChange={(event) => setInstructions(event.target.value)}
         />
+        <input
+          ref={attachmentInputRef}
+          className="visually-hidden"
+          type="file"
+          multiple
+          accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          onChange={(event) => addAttachments(event.target.files)}
+        />
       </label>
+
+      {(retainedAttachments.length > 0 || attachments.length > 0) && (
+        <div className="attachment-editor">
+          {retainedAttachments.map((attachment) => (
+            <div className="attachment-editor-item" key={attachment.id}>
+              <AttachmentLink attachment={attachment} />
+              <button
+                type="button"
+                className="danger-button icon-button"
+                aria-label={`Retirer ${attachment.originalName}`}
+                onClick={() => setRetainedAttachments((current) => current.filter((item) => item.id !== attachment.id))}
+              >
+                <DeleteIcon />
+              </button>
+            </div>
+          ))}
+          {attachments.map((attachment, index) => (
+            <div className="attachment-editor-item" key={`${attachment.name}-${index}`}>
+              <span className="pending-attachment"><PaperclipIcon />{attachment.name}</span>
+              <button
+                type="button"
+                className="danger-button icon-button"
+                aria-label={`Retirer ${attachment.name}`}
+                onClick={() => setAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+              >
+                <DeleteIcon />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="subsection-heading">
         <h3>Ingredients</h3>

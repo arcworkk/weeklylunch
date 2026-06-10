@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Meal } from "../types/meal";
 import { MealSlot, PlannedMeal, WeekDay } from "../types/weeklyPlan";
 import { DeleteIcon } from "./ActionIcons";
 import { EditIcon } from "./EditIcon";
+import { AuthenticatedImage } from "./AuthenticatedImage";
 
 type MealSlotSelectorProps = {
   day: WeekDay;
@@ -131,10 +133,13 @@ export const MealSlotSelector = ({
       ) : plannedMeal ? (
         <>
           <div className="selected-meal-summary">
-            <span className="selected-meal-marker" aria-hidden="true" />
+            <Link className="planning-recipe-media" to={`/recipes/${plannedMeal.meal.recipe.id}`} title={`Voir ${plannedMeal.meal.recipe.title}`}>
+              <AuthenticatedImage src={plannedMeal.meal.recipe.thumbnailUrl} alt={plannedMeal.meal.recipe.title} />
+            </Link>
             <div className="selected-meal-copy">
               <span>Repas planifie</span>
               <strong title={plannedMeal.meal.title}>{plannedMeal.meal.title}</strong>
+              <Link to={`/recipes/${plannedMeal.meal.recipe.id}`}>{plannedMeal.meal.recipe.title}</Link>
             </div>
             <span className="servings-badge">
               {plannedMeal.servings} portion{plannedMeal.servings > 1 ? "s" : ""}

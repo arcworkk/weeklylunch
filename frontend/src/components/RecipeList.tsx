@@ -13,7 +13,7 @@ export const RecipeList = ({ recipes, onEdit, onDelete }: RecipeListProps) => {
   }
 
   return (
-    <div className="stack">
+    <div className="recipe-grid">
       {recipes.map((recipe) => (
         <RecipeCard
           key={recipe.id}

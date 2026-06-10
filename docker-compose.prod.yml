@@ -9,6 +9,7 @@ services:
       - ./backend/.env
     environment:
       DATABASE_URL: "file:/data/weeklylunch.db"
+      UPLOAD_DIR: "/data/uploads"
     ports:
       - "127.0.0.1:3001:3001"
     volumes:

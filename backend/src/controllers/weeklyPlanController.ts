@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { prisma } from "../utils/prisma";
+import { recipeInclude, serializeRecipe } from "../utils/recipeMedia";
 
 const WEEK_DAYS = [
   "MONDAY",
@@ -36,11 +37,7 @@ const weeklyPlanInclude = {
       meal: {
         include: {
           recipe: {
-            include: {
-              ingredients: {
-                orderBy: { createdAt: "asc" as const }
-              }
-            }
+            include: recipeInclude
           }
         }
       }
@@ -48,6 +45,23 @@ const weeklyPlanInclude = {
     orderBy: [{ day: "asc" as const }, { slot: "asc" as const }]
   }
 };
+
+const serializePlannedMeal = <T extends { meal: { recipe: Parameters<typeof serializeRecipe>[0] } }>(
+  plannedMeal: T
+) => ({
+  ...plannedMeal,
+  meal: {
+    ...plannedMeal.meal,
+    recipe: serializeRecipe(plannedMeal.meal.recipe)
+  }
+});
+
+const serializeWeeklyPlan = <T extends { plannedMeals: Array<Parameters<typeof serializePlannedMeal>[0]> }>(
+  weeklyPlan: T
+) => ({
+  ...weeklyPlan,
+  plannedMeals: weeklyPlan.plannedMeals.map(serializePlannedMeal)
+});
 
 const parseWeeklyPlanBody = (body: Record<string, unknown>) => {
   const name = String(body.name ?? "").trim();
@@ -134,7 +148,7 @@ export const getWeeklyPlans = async (
       orderBy: { createdAt: "desc" }
     });
 
-    res.json(weeklyPlans);
+    res.json(weeklyPlans.map(serializeWeeklyPlan));
   } catch (error) {
     next(error);
   }
@@ -156,7 +170,7 @@ export const getWeeklyPlan = async (
       throw makeError("Weekly plan not found", 404);
     }
 
-    res.json(weeklyPlan);
+    res.json(serializeWeeklyPlan(weeklyPlan));
   } catch (error) {
     next(error);
   }
@@ -175,7 +189,7 @@ export const createWeeklyPlan = async (
       include: weeklyPlanInclude
     });
 
-    res.status(201).json(weeklyPlan);
+    res.status(201).json(serializeWeeklyPlan(weeklyPlan));
   } catch (error) {
     next(error);
   }
@@ -203,7 +217,7 @@ export const updateWeeklyPlan = async (
       include: weeklyPlanInclude
     });
 
-    res.json(updatedWeeklyPlan);
+    res.json(serializeWeeklyPlan(updatedWeeklyPlan));
   } catch (error) {
     next(error);
   }
@@ -271,7 +285,7 @@ export const addPlannedMeal = async (
       include: weeklyPlanInclude.plannedMeals.include
     });
 
-    res.status(201).json(plannedMeal);
+    res.status(201).json(serializePlannedMeal(plannedMeal));
   } catch (error) {
     next(error);
   }
@@ -310,7 +324,7 @@ export const updatePlannedMeal = async (
         include: weeklyPlanInclude.plannedMeals.include
       });
 
-      res.json(plannedMeal);
+      res.json(serializePlannedMeal(plannedMeal));
     } catch (error) {
       handlePrismaError(error);
     }
