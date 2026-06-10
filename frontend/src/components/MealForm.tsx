@@ -20,19 +20,47 @@ export const MealForm = ({
   const [title, setTitle] = useState("");
   const [recipeId, setRecipeId] = useState("");
   const [desiredServings, setDesiredServings] = useState("1");
+  const [useRecipeTitle, setUseRecipeTitle] = useState(true);
 
   useEffect(() => {
     if (initialMeal) {
-      setTitle(initialMeal.title);
+      const recipeTitle =
+        recipes.find((recipe) => recipe.id === initialMeal.recipeId)?.title ?? "";
+      const usesRecipeTitle =
+        recipeTitle.length > 0 && initialMeal.title.trim() === recipeTitle.trim();
+
+      setTitle(usesRecipeTitle ? recipeTitle : initialMeal.title);
       setRecipeId(initialMeal.recipeId);
       setDesiredServings(String(initialMeal.desiredServings));
+      setUseRecipeTitle(usesRecipeTitle);
       return;
     }
 
-    setTitle("");
-    setRecipeId(recipes[0]?.id ?? "");
+    const firstRecipe = recipes[0];
+
+    setTitle(firstRecipe?.title ?? "");
+    setRecipeId(firstRecipe?.id ?? "");
     setDesiredServings("1");
+    setUseRecipeTitle(true);
   }, [initialMeal, recipes]);
+
+  const handleRecipeChange = (nextRecipeId: string) => {
+    setRecipeId(nextRecipeId);
+
+    if (useRecipeTitle) {
+      const nextRecipe = recipes.find((recipe) => recipe.id === nextRecipeId);
+      setTitle(nextRecipe?.title ?? "");
+    }
+  };
+
+  const handleTitleModeChange = (checked: boolean) => {
+    setUseRecipeTitle(checked);
+
+    if (checked) {
+      const selectedRecipe = recipes.find((recipe) => recipe.id === recipeId);
+      setTitle(selectedRecipe?.title ?? "");
+    }
+  };
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -42,15 +70,10 @@ export const MealForm = ({
   return (
     <form className="form-panel modal-form" onSubmit={handleSubmit}>
       <label>
-        Titre
-        <input value={title} onChange={(event) => setTitle(event.target.value)} required />
-      </label>
-
-      <label>
         Recette
         <select
           value={recipeId}
-          onChange={(event) => setRecipeId(event.target.value)}
+          onChange={(event) => handleRecipeChange(event.target.value)}
           required
           disabled={recipes.length === 0}
         >
@@ -60,6 +83,30 @@ export const MealForm = ({
             </option>
           ))}
         </select>
+      </label>
+
+      <label className={`meal-title-mode${useRecipeTitle ? " is-active" : ""}`}>
+        <input
+          type="checkbox"
+          checked={useRecipeTitle}
+          onChange={(event) => handleTitleModeChange(event.target.checked)}
+        />
+        <span className="meal-title-mode-copy">
+          <strong>Utiliser le nom de la recette</strong>
+          <small>
+            Le titre du repas suivra automatiquement la recette selectionnee.
+          </small>
+        </span>
+      </label>
+
+      <label>
+        Titre du repas
+        <input
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          readOnly={useRecipeTitle}
+          required
+        />
       </label>
 
       <label>
