@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { WeeklyPlanner } from "../components/WeeklyPlanner";
 import { useConfirm } from "../hooks/useConfirm";
 import { mealService } from "../services/mealService";
@@ -17,6 +17,10 @@ export const WeeklyPlannerPage = () => {
   const [selectedPlanId, setSelectedPlanId] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [focusSlot, setFocusSlot] = useState<{
+    day: WeekDay;
+    slot: MealSlot;
+  } | null>(null);
   const { confirm, confirmationModal } = useConfirm();
 
   const selectedPlan = plans.find((plan) => plan.id === selectedPlanId) ?? null;
@@ -91,8 +95,13 @@ export const WeeklyPlannerPage = () => {
       await weeklyPlanService.addPlannedMeal(selectedPlan.id, payload);
     }
 
+    setFocusSlot({ day, slot });
     await loadData(selectedPlan.id);
   };
+
+  const handleFocusSlotRestored = useCallback(() => {
+    setFocusSlot(null);
+  }, []);
 
   const handleDeleteSlot = async (plannedMealId: string) => {
     if (!selectedPlan) {
@@ -115,6 +124,9 @@ export const WeeklyPlannerPage = () => {
     }
 
     await weeklyPlanService.deletePlannedMeal(plannedMealId);
+    if (plannedMeal) {
+      setFocusSlot({ day: plannedMeal.day, slot: plannedMeal.slot });
+    }
     await loadData(selectedPlan.id);
   };
 
@@ -137,6 +149,8 @@ export const WeeklyPlannerPage = () => {
           onDeletePlan={handleDeletePlan}
           onSaveSlot={handleSaveSlot}
           onDeleteSlot={handleDeleteSlot}
+          focusSlot={focusSlot}
+          onFocusSlotRestored={handleFocusSlotRestored}
         />
       )}
       {confirmationModal}

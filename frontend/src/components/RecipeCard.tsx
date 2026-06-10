@@ -1,5 +1,7 @@
 import { Recipe } from "../types/recipe";
 import { formatDuration } from "../utils/formatDuration";
+import { DeleteIcon } from "./ActionIcons";
+import { EditIcon } from "./EditIcon";
 import { IngredientList } from "./IngredientList";
 
 type RecipeCardProps = {
@@ -21,11 +23,23 @@ export const RecipeCard = ({ recipe, onEdit, onDelete }: RecipeCardProps) => {
           </p>
         </div>
         <div className="card-actions">
-          <button type="button" className="secondary-button" onClick={() => onEdit(recipe)}>
-            Modifier
+          <button
+            type="button"
+            className="secondary-button icon-button"
+            aria-label={`Modifier ${recipe.title}`}
+            title="Modifier la recette"
+            onClick={() => onEdit(recipe)}
+          >
+            <EditIcon />
           </button>
-          <button type="button" className="danger-button" onClick={() => onDelete(recipe)}>
-            Supprimer
+          <button
+            type="button"
+            className="danger-button icon-button"
+            aria-label={`Supprimer ${recipe.title}`}
+            title="Supprimer la recette"
+            onClick={() => onDelete(recipe)}
+          >
+            <DeleteIcon />
           </button>
         </div>
       </div>

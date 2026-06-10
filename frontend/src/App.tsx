@@ -4,6 +4,7 @@ import { Navbar } from "./components/Navbar";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { getAuthToken } from "./services/api";
 import { authService } from "./services/authService";
+import { adminService } from "./services/adminService";
 import { AuthResponse, User } from "./types/auth";
 import { LoginPage } from "./pages/LoginPage";
 import { MealsPage } from "./pages/MealsPage";
@@ -11,9 +12,11 @@ import { PrepSummaryPage } from "./pages/PrepSummaryPage";
 import { RecipesPage } from "./pages/RecipesPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { WeeklyPlannerPage } from "./pages/WeeklyPlannerPage";
+import { AdminPage } from "./pages/AdminPage";
 
 export const App = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loadingUser, setLoadingUser] = useState(true);
 
   useEffect(() => {
@@ -38,6 +41,24 @@ export const App = () => {
     void loadUser();
   }, []);
 
+  useEffect(() => {
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+
+    const loadAdminAccess = async () => {
+      try {
+        const access = await adminService.getAccess();
+        setIsAdmin(access.isAdmin);
+      } catch {
+        setIsAdmin(false);
+      }
+    };
+
+    void loadAdminAccess();
+  }, [user]);
+
   const handleAuthenticated = (response: AuthResponse) => {
     setUser(response.user);
   };
@@ -45,11 +66,12 @@ export const App = () => {
   const handleLogout = () => {
     authService.logout();
     setUser(null);
+    setIsAdmin(false);
   };
 
   return (
     <>
-      <Navbar user={user} onLogout={handleLogout} />
+      <Navbar user={user} isAdmin={isAdmin} onLogout={handleLogout} />
       <Routes>
         <Route
           path="/login"
@@ -100,6 +122,14 @@ export const App = () => {
           element={
             <ProtectedRoute user={user} loading={loadingUser}>
               <PrepSummaryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/system/weeklylunch-console-7f3a"
+          element={
+            <ProtectedRoute user={user} loading={loadingUser}>
+              <AdminPage />
             </ProtectedRoute>
           }
         />

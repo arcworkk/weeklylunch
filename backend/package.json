@@ -7,9 +7,11 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
+    "admin:create": "tsx src/scripts/createAdmin.ts",
     "prisma:migrate": "node scripts/prisma-migrate.cjs",
     "prisma:migrate:dev": "prisma migrate dev",
-    "prisma:seed": "prisma db seed",
+    "prisma:seed": "npm run prisma:seed:dev",
+    "prisma:seed:dev": "tsx prisma/seed.ts",
     "prisma:studio": "prisma studio"
   },
   "dependencies": {

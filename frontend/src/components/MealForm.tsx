@@ -19,32 +19,28 @@ export const MealForm = ({
 }: MealFormProps) => {
   const [title, setTitle] = useState("");
   const [recipeId, setRecipeId] = useState("");
-  const [desiredServings, setDesiredServings] = useState(1);
+  const [desiredServings, setDesiredServings] = useState("1");
 
   useEffect(() => {
     if (initialMeal) {
       setTitle(initialMeal.title);
       setRecipeId(initialMeal.recipeId);
-      setDesiredServings(initialMeal.desiredServings);
+      setDesiredServings(String(initialMeal.desiredServings));
       return;
     }
 
     setTitle("");
     setRecipeId(recipes[0]?.id ?? "");
-    setDesiredServings(1);
+    setDesiredServings("1");
   }, [initialMeal, recipes]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    await onSubmit({ title, recipeId, desiredServings });
+    await onSubmit({ title, recipeId, desiredServings: Number(desiredServings) });
   };
 
   return (
-    <form className="panel form-panel" onSubmit={handleSubmit}>
-      <div className="panel-heading">
-        <h2>{initialMeal ? "Modifier le repas" : "Nouveau repas"}</h2>
-      </div>
-
+    <form className="form-panel modal-form" onSubmit={handleSubmit}>
       <label>
         Titre
         <input value={title} onChange={(event) => setTitle(event.target.value)} required />
@@ -72,7 +68,7 @@ export const MealForm = ({
           type="number"
           min="1"
           value={desiredServings}
-          onChange={(event) => setDesiredServings(Number(event.target.value))}
+          onChange={(event) => setDesiredServings(event.target.value)}
           required
         />
       </label>
@@ -84,7 +80,11 @@ export const MealForm = ({
           </button>
         )}
         <button type="submit" disabled={loading || recipes.length === 0}>
-          {loading ? "Enregistrement..." : "Enregistrer"}
+          {loading
+            ? "Enregistrement..."
+            : initialMeal
+              ? "Enregistrer les modifications"
+              : "Creer le repas"}
         </button>
       </div>
     </form>

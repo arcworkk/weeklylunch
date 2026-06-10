@@ -9,7 +9,7 @@ export const errorMiddleware: ErrorRequestHandler = (err: HttpError, _req, res, 
   const message = status === 500 ? "Internal server error" : err.message;
 
   if (status === 500) {
-    console.error(err);
+    console.error(process.env.NODE_ENV === "production" ? err.message : err);
   }
 
   res.status(status).json({ message });

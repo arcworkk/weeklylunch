@@ -88,6 +88,7 @@ export const me = async (req: Request, res: Response, next: NextFunction) => {
       where: { id: req.user.userId },
       select: {
         id: true,
+        name: true,
         email: true,
         createdAt: true,
         updatedAt: true

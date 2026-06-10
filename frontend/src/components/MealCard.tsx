@@ -1,5 +1,7 @@
 import { Meal } from "../types/meal";
 import { formatDuration } from "../utils/formatDuration";
+import { DeleteIcon } from "./ActionIcons";
+import { EditIcon } from "./EditIcon";
 import { ScaledIngredients } from "./ScaledIngredients";
 
 type MealCardProps = {
@@ -27,11 +29,23 @@ export const MealCard = ({ meal, onEdit, onDelete }: MealCardProps) => {
           </p>
         </div>
         <div className="card-actions">
-          <button type="button" className="secondary-button" onClick={() => onEdit(meal)}>
-            Modifier
+          <button
+            type="button"
+            className="secondary-button icon-button"
+            aria-label={`Modifier ${meal.title}`}
+            title="Modifier le repas"
+            onClick={() => onEdit(meal)}
+          >
+            <EditIcon />
           </button>
-          <button type="button" className="danger-button" onClick={() => onDelete(meal)}>
-            Supprimer
+          <button
+            type="button"
+            className="danger-button icon-button"
+            aria-label={`Supprimer ${meal.title}`}
+            title="Supprimer le repas"
+            onClick={() => onDelete(meal)}
+          >
+            <DeleteIcon />
           </button>
         </div>
       </div>

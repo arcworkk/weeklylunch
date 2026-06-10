@@ -1,18 +1,29 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useConfirm } from "../hooks/useConfirm";
 import { IngredientInput } from "../types/ingredient";
 import { Recipe, RecipeInput } from "../types/recipe";
+import { AddIcon, DeleteIcon } from "./ActionIcons";
 
 type RecipeFormProps = {
   initialRecipe?: Recipe | null;
+  ingredientSuggestions?: IngredientSuggestion[];
   loading?: boolean;
   onCancel?: () => void;
   onSubmit: (recipe: RecipeInput) => Promise<void>;
 };
 
-const emptyIngredient = (): IngredientInput => ({
+type FormIngredient = Omit<IngredientInput, "quantity"> & {
+  quantity: string;
+};
+
+export type IngredientSuggestion = {
+  name: string;
+  unit: string;
+};
+
+const emptyIngredient = (): FormIngredient => ({
   name: "",
-  quantity: 0,
+  quantity: "",
   unit: "g"
 });
 
@@ -33,31 +44,33 @@ const units = [
 
 export const RecipeForm = ({
   initialRecipe,
+  ingredientSuggestions = [],
   loading = false,
   onCancel,
   onSubmit
 }: RecipeFormProps) => {
   const [title, setTitle] = useState("");
-  const [baseServings, setBaseServings] = useState(1);
-  const [prepTimeMinutes, setPrepTimeMinutes] = useState(0);
-  const [cookTimeMinutes, setCookTimeMinutes] = useState(0);
+  const [baseServings, setBaseServings] = useState("1");
+  const [prepTimeMinutes, setPrepTimeMinutes] = useState("0");
+  const [cookTimeMinutes, setCookTimeMinutes] = useState("0");
   const [instructions, setInstructions] = useState("");
-  const [ingredients, setIngredients] = useState<IngredientInput[]>([
+  const [ingredients, setIngredients] = useState<FormIngredient[]>([
     emptyIngredient()
   ]);
+  const firstIngredientInputRef = useRef<HTMLInputElement>(null);
   const { confirm, confirmationModal } = useConfirm();
 
   useEffect(() => {
     if (initialRecipe) {
       setTitle(initialRecipe.title);
-      setBaseServings(initialRecipe.baseServings);
-      setPrepTimeMinutes(initialRecipe.prepTimeMinutes);
-      setCookTimeMinutes(initialRecipe.cookTimeMinutes);
+      setBaseServings(String(initialRecipe.baseServings));
+      setPrepTimeMinutes(String(initialRecipe.prepTimeMinutes));
+      setCookTimeMinutes(String(initialRecipe.cookTimeMinutes));
       setInstructions(initialRecipe.instructions);
       setIngredients(
         initialRecipe.ingredients.map(({ name, quantity, unit }) => ({
           name,
-          quantity,
+          quantity: String(quantity),
           unit
         }))
       );
@@ -65,16 +78,16 @@ export const RecipeForm = ({
     }
 
     setTitle("");
-    setBaseServings(1);
-    setPrepTimeMinutes(0);
-    setCookTimeMinutes(0);
+    setBaseServings("1");
+    setPrepTimeMinutes("0");
+    setCookTimeMinutes("0");
     setInstructions("");
     setIngredients([emptyIngredient()]);
   }, [initialRecipe]);
 
   const updateIngredient = (
     index: number,
-    field: keyof IngredientInput,
+    field: keyof FormIngredient,
     value: string
   ) => {
     setIngredients((current) =>
@@ -82,7 +95,7 @@ export const RecipeForm = ({
         ingredientIndex === index
           ? {
               ...ingredient,
-              [field]: field === "quantity" ? Number(value) : value
+              [field]: value
             }
           : ingredient
       )
@@ -110,24 +123,53 @@ export const RecipeForm = ({
     );
   };
 
+  const addIngredient = () => {
+    setIngredients((current) => [emptyIngredient(), ...current]);
+    window.requestAnimationFrame(() => firstIngredientInputRef.current?.focus());
+  };
+
+  const getSuggestions = (value: string) => {
+    const query = value.trim().toLocaleLowerCase("fr");
+
+    if (query.length < 3) {
+      return [];
+    }
+
+    return ingredientSuggestions
+      .filter((suggestion) => {
+        const name = suggestion.name.toLocaleLowerCase("fr");
+        return name.includes(query) && name !== query;
+      })
+      .slice(0, 6);
+  };
+
+  const selectSuggestion = (index: number, suggestion: IngredientSuggestion) => {
+    setIngredients((current) =>
+      current.map((ingredient, ingredientIndex) =>
+        ingredientIndex === index
+          ? { ...ingredient, name: suggestion.name, unit: suggestion.unit }
+          : ingredient
+      )
+    );
+  };
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     await onSubmit({
       title,
-      baseServings,
-      prepTimeMinutes,
-      cookTimeMinutes,
+      baseServings: Number(baseServings),
+      prepTimeMinutes: Number(prepTimeMinutes),
+      cookTimeMinutes: Number(cookTimeMinutes),
       instructions,
-      ingredients
+      ingredients: ingredients.map((ingredient) => ({
+        ...ingredient,
+        quantity: Number(ingredient.quantity)
+      }))
     });
   };
 
   return (
-    <form className="panel form-panel" onSubmit={handleSubmit}>
-      <div className="panel-heading">
-        <h2>{initialRecipe ? "Modifier la recette" : "Nouvelle recette"}</h2>
-      </div>
-
+    <form className="form-panel modal-form" onSubmit={handleSubmit}>
       <label>
         Titre
         <input value={title} onChange={(event) => setTitle(event.target.value)} required />
@@ -140,7 +182,7 @@ export const RecipeForm = ({
             type="number"
             min="1"
             value={baseServings}
-            onChange={(event) => setBaseServings(Number(event.target.value))}
+            onChange={(event) => setBaseServings(event.target.value)}
             required
           />
         </label>
@@ -150,7 +192,7 @@ export const RecipeForm = ({
             type="number"
             min="0"
             value={prepTimeMinutes}
-            onChange={(event) => setPrepTimeMinutes(Number(event.target.value))}
+            onChange={(event) => setPrepTimeMinutes(event.target.value)}
             required
           />
         </label>
@@ -160,7 +202,7 @@ export const RecipeForm = ({
             type="number"
             min="0"
             value={cookTimeMinutes}
-            onChange={(event) => setCookTimeMinutes(Number(event.target.value))}
+            onChange={(event) => setCookTimeMinutes(event.target.value)}
             required
           />
         </label>
@@ -179,52 +221,94 @@ export const RecipeForm = ({
         <h3>Ingredients</h3>
         <button
           type="button"
-          className="secondary-button"
-          onClick={() => setIngredients((current) => [...current, emptyIngredient()])}
+          className="secondary-button icon-button"
+          aria-label="Ajouter un ingredient"
+          title="Ajouter un ingredient"
+          onClick={addIngredient}
         >
-          Ajouter
+          <AddIcon />
         </button>
       </div>
 
       <div className="ingredient-editor">
-        {ingredients.map((ingredient, index) => (
-          <div className="ingredient-row" key={index}>
-            <input
-              placeholder="Nom"
-              value={ingredient.name}
-              onChange={(event) => updateIngredient(index, "name", event.target.value)}
-              required
-            />
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="Quantite"
-              value={ingredient.quantity}
-              onChange={(event) =>
-                updateIngredient(index, "quantity", event.target.value)
-              }
-              required
-            />
-            <select
-              value={ingredient.unit}
-              onChange={(event) => updateIngredient(index, "unit", event.target.value)}
-            >
-              {units.map((unit) => (
-                <option key={unit} value={unit}>
-                  {unit}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className="danger-button"
-              onClick={() => void removeIngredient(index)}
-            >
-              Supprimer
-            </button>
-          </div>
-        ))}
+        {ingredients.map((ingredient, index) => {
+          const suggestions = getSuggestions(ingredient.name);
+
+          return (
+          <article className="ingredient-card" key={index}>
+            <div className="ingredient-card-heading">
+              <div>
+                <strong>Ingredient {index + 1}</strong>
+                <span>{ingredient.name || "Nouvel ingredient"}</span>
+              </div>
+              <button
+                type="button"
+                className="danger-button icon-button"
+                aria-label={`Supprimer ${ingredient.name || "cet ingredient"}`}
+                title="Supprimer l'ingredient"
+                disabled={ingredients.length === 1}
+                onClick={() => void removeIngredient(index)}
+              >
+                <DeleteIcon />
+              </button>
+            </div>
+            <div className="ingredient-card-fields">
+              <label className="ingredient-name-field">
+                Nom
+                <input
+                  ref={index === 0 ? firstIngredientInputRef : undefined}
+                  autoComplete="off"
+                  placeholder="Ex. tomates, riz, poulet..."
+                  value={ingredient.name}
+                  onChange={(event) => updateIngredient(index, "name", event.target.value)}
+                  required
+                />
+                {suggestions.length > 0 && (
+                  <div className="ingredient-suggestions" role="listbox" aria-label="Suggestions d'ingredients">
+                    {suggestions.map((suggestion) => (
+                      <button
+                        type="button"
+                        role="option"
+                        key={`${suggestion.name}-${suggestion.unit}`}
+                        onClick={() => selectSuggestion(index, suggestion)}
+                      >
+                        <span>{suggestion.name}</span>
+                        <small>{suggestion.unit}</small>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </label>
+              <label>
+                Quantite
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={ingredient.quantity}
+                  onChange={(event) =>
+                    updateIngredient(index, "quantity", event.target.value)
+                  }
+                  required
+                />
+              </label>
+              <label>
+                Unite
+                <select
+                  value={ingredient.unit}
+                  onChange={(event) => updateIngredient(index, "unit", event.target.value)}
+                >
+                  {units.map((unit) => (
+                    <option key={unit} value={unit}>
+                      {unit}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </article>
+          );
+        })}
       </div>
 
       <div className="form-actions">
@@ -234,7 +318,11 @@ export const RecipeForm = ({
           </button>
         )}
         <button type="submit" disabled={loading}>
-          {loading ? "Enregistrement..." : "Enregistrer"}
+          {loading
+            ? "Enregistrement..."
+            : initialRecipe
+              ? "Enregistrer les modifications"
+              : "Creer la recette"}
         </button>
       </div>
       {confirmationModal}

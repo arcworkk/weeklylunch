@@ -9,8 +9,8 @@ type LoginPageProps = {
 
 export const LoginPage = ({ onAuthenticated }: LoginPageProps) => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("test@weeklylunch.local");
-  const [password, setPassword] = useState("password123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 

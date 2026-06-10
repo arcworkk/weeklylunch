@@ -1,5 +1,6 @@
-const API_URL = "http://localhost:3001/api";
+const API_URL = String(import.meta.env.VITE_API_URL ?? "/api").replace(/\/$/, "");
 const TOKEN_KEY = "weeklylunch_token";
+const API_TIMEOUT_MS = 15000;
 
 export const getAuthToken = () => localStorage.getItem(TOKEN_KEY);
 
@@ -31,13 +32,32 @@ export const apiRequest = async <T>(path: string, options: ApiOptions = {}) => {
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers,
-    body: isJsonBody
-      ? JSON.stringify(options.body)
-      : (options.body as BodyInit | null | undefined)
-  });
+  const timeoutController = new AbortController();
+  const timeoutId = window.setTimeout(
+    () => timeoutController.abort(),
+    API_TIMEOUT_MS
+  );
+
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers,
+      signal: options.signal ?? timeoutController.signal,
+      body: isJsonBody
+        ? JSON.stringify(options.body)
+        : (options.body as BodyInit | null | undefined)
+    });
+  } catch (error) {
+    if (timeoutController.signal.aborted) {
+      throw new Error("L'API ne repond pas. Verifiez votre connexion reseau.");
+    }
+
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
 
   if (response.status === 204) {
     return undefined as T;
