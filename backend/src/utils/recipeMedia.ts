@@ -25,7 +25,7 @@ export const serializeRecipe = (recipe: RecipeWithMedia) => {
   return {
     ...safeRecipe,
     thumbnailUrl: recipe.thumbnailStoredName
-      ? `/recipes/${recipe.id}/thumbnail`
+      ? `/recipes/${recipe.id}/thumbnail?v=${recipe.updatedAt.getTime()}`
       : null,
     attachments: attachments.map(({ storedName: _storedName, ...attachment }) => ({
       ...attachment,

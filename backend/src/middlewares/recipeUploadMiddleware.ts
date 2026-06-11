@@ -4,7 +4,17 @@ import multer from "multer";
 import path from "node:path";
 import { uploadRoot } from "../utils/recipeMedia";
 
-const imageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const imageTypes = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/pjpeg",
+  "image/png",
+  "image/x-png",
+  "image/webp",
+  "image/gif",
+  "image/avif"
+]);
+const imageExtensions = /\.(?:avif|gif|jpe?g|png|webp)$/i;
 const attachmentTypes = new Set([
   ...imageTypes,
   "application/pdf",
@@ -32,8 +42,9 @@ const upload = multer({
   fileFilter: (_req, file, callback) => {
     const allowed =
       file.fieldname === "thumbnail"
-        ? imageTypes.has(file.mimetype)
-        : file.fieldname === "attachments" && attachmentTypes.has(file.mimetype);
+        ? imageTypes.has(file.mimetype) || imageExtensions.test(file.originalname)
+        : file.fieldname === "attachments" &&
+          (attachmentTypes.has(file.mimetype) || imageExtensions.test(file.originalname));
 
     if (!allowed) {
       const error = new Error("Unsupported recipe file type") as Error & { status: number };

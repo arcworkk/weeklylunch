@@ -1418,6 +1418,30 @@ h3 {
   padding: 0.9rem;
 }
 
+.recipe-thumbnail-section {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.recipe-media-picker {
+  cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.recipe-media-picker:hover {
+  border-color: #7bb594;
+  box-shadow: 0 12px 28px rgba(27, 48, 64, 0.09);
+}
+
+.recipe-media-picker:active {
+  transform: translateY(1px);
+}
+
+.recipe-thumbnail-section:focus-within .recipe-media-picker {
+  border-color: #2f8a63;
+  box-shadow: 0 0 0 3px rgba(47, 138, 99, 0.18);
+}
+
 .recipe-media-editor-copy,
 .recipe-thumbnail-editor,
 .instructions-field-heading,
@@ -1447,6 +1471,39 @@ h3 {
   flex: 0 0 auto;
   border-radius: 10px;
   object-fit: cover;
+}
+
+.recipe-media-picker-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.recipe-media-picker-copy strong {
+  overflow: hidden;
+  color: #29483a;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recipe-media-picker-copy span {
+  color: #667784;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.recipe-thumbnail-remove {
+  width: fit-content;
+  justify-self: end;
+}
+
+.recipe-thumbnail-error {
+  margin: 0;
+}
+
+.recipe-instructions-textarea {
+  min-height: 190px;
+  resize: vertical;
 }
 
 .recipe-media-actions {
@@ -1667,6 +1724,7 @@ h3 {
 [data-theme="dark"] .attachment-editor-item,
 [data-theme="dark"] .admin-user-card,
 [data-theme="dark"] .meal-title-mode { border-color: #354851; background: #1d2a31; }
+[data-theme="dark"] .recipe-media-picker-copy strong { color: #bfe5cf; }
 [data-theme="dark"] .modal-form .form-actions { border-color: #33434d; background: #18232a; }
 [data-theme="dark"] .form-modal-header,
 [data-theme="dark"] .recipe-detail-section { border-color: #33434d; }

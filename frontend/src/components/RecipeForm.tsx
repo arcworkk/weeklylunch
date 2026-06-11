@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useId, useRef, useState } from "react";
 import { useConfirm } from "../hooks/useConfirm";
 import { IngredientInput } from "../types/ingredient";
 import { Recipe, RecipeAttachment, RecipeSubmission } from "../types/recipe";
@@ -64,6 +64,8 @@ export const RecipeForm = ({
   const [removeThumbnail, setRemoveThumbnail] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [retainedAttachments, setRetainedAttachments] = useState<RecipeAttachment[]>([]);
+  const [thumbnailError, setThumbnailError] = useState("");
+  const thumbnailInputId = useId();
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const attachmentInputRef = useRef<HTMLInputElement>(null);
   const firstIngredientInputRef = useRef<HTMLInputElement>(null);
@@ -87,6 +89,7 @@ export const RecipeForm = ({
       setThumbnail(null);
       setRemoveThumbnail(false);
       setAttachments([]);
+      setThumbnailError("");
       return;
     }
 
@@ -100,6 +103,7 @@ export const RecipeForm = ({
     setThumbnail(null);
     setRemoveThumbnail(false);
     setAttachments([]);
+    setThumbnailError("");
   }, [initialRecipe]);
 
   useEffect(() => {
@@ -204,6 +208,32 @@ export const RecipeForm = ({
 
   const handleThumbnailChange = (file: File | undefined) => {
     if (!file) return;
+
+    const allowedTypes = new Set([
+      "image/jpeg",
+      "image/jpg",
+      "image/pjpeg",
+      "image/png",
+      "image/x-png",
+      "image/webp",
+      "image/gif",
+      "image/avif"
+    ]);
+    const hasAllowedExtension = /\.(?:avif|gif|jpe?g|png|webp)$/i.test(file.name);
+
+    if (!allowedTypes.has(file.type) && !hasAllowedExtension) {
+      setThumbnailError("Utilisez une image JPG, PNG, WebP, GIF ou AVIF.");
+      if (thumbnailInputRef.current) thumbnailInputRef.current.value = "";
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setThumbnailError("L'image depasse la taille maximale de 10 Mo.");
+      if (thumbnailInputRef.current) thumbnailInputRef.current.value = "";
+      return;
+    }
+
+    setThumbnailError("");
     setThumbnail(file);
     setRemoveThumbnail(false);
   };
@@ -211,6 +241,7 @@ export const RecipeForm = ({
   const clearThumbnail = () => {
     setThumbnail(null);
     setRemoveThumbnail(true);
+    setThumbnailError("");
     if (thumbnailInputRef.current) thumbnailInputRef.current.value = "";
   };
 
@@ -264,41 +295,44 @@ export const RecipeForm = ({
         </label>
       </div>
 
-      <section className="recipe-media-editor">
-        <div className="recipe-media-editor-copy">
-          <ImageIcon />
-          <div>
-            <strong>Miniature de la recette</strong>
-            <span>Facultative, image de 10 Mo maximum.</span>
+      <section className="recipe-thumbnail-section">
+        <input
+          ref={thumbnailInputRef}
+          id={thumbnailInputId}
+          className="visually-hidden"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif,image/avif,.jpg,.jpeg,.png,.webp,.gif,.avif"
+          onChange={(event) => handleThumbnailChange(event.target.files?.[0])}
+        />
+        <label className="recipe-media-editor recipe-media-picker" htmlFor={thumbnailInputId}>
+          <div className="recipe-media-editor-copy">
+            <ImageIcon />
+            <div>
+              <strong>Miniature de la recette</strong>
+              <span>Facultative, image de 10 Mo maximum.</span>
+            </div>
           </div>
-        </div>
-        <div className="recipe-thumbnail-editor">
-          {thumbnailPreview ? (
-            <img src={thumbnailPreview} alt="Nouvelle miniature" />
-          ) : (
-            <AuthenticatedImage
-              src={!removeThumbnail ? initialRecipe?.thumbnailUrl ?? null : null}
-              alt={initialRecipe?.title ?? "Recette sans image"}
-            />
-          )}
-          <div className="recipe-media-actions">
-            <input
-              ref={thumbnailInputRef}
-              className="visually-hidden"
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              onChange={(event) => handleThumbnailChange(event.target.files?.[0])}
-            />
-            <button type="button" className="secondary-button" onClick={() => thumbnailInputRef.current?.click()}>
-              Choisir une image
-            </button>
-            {(thumbnailPreview || (!removeThumbnail && initialRecipe?.thumbnailUrl)) && (
-              <button type="button" className="ghost-button" onClick={clearThumbnail}>
-                Retirer
-              </button>
+          <div className="recipe-thumbnail-editor">
+            {thumbnailPreview ? (
+              <img src={thumbnailPreview} alt="Nouvelle miniature" />
+            ) : (
+              <AuthenticatedImage
+                src={!removeThumbnail ? initialRecipe?.thumbnailUrl ?? null : null}
+                alt={initialRecipe?.title ?? "Recette sans image"}
+              />
             )}
+            <div className="recipe-media-picker-copy">
+              <strong>{thumbnail?.name ?? (initialRecipe?.thumbnailUrl && !removeThumbnail ? "Image enregistree" : "Ajouter une image")}</strong>
+              <span>Appuyez ici pour choisir une photo ou un fichier image.</span>
+            </div>
           </div>
-        </div>
+        </label>
+        {thumbnailError && <p className="error-text recipe-thumbnail-error">{thumbnailError}</p>}
+        {(thumbnailPreview || (!removeThumbnail && initialRecipe?.thumbnailUrl)) && (
+          <button type="button" className="ghost-button recipe-thumbnail-remove" onClick={clearThumbnail}>
+            Retirer la miniature
+          </button>
+        )}
       </section>
 
       <label className="instructions-field">
@@ -316,7 +350,8 @@ export const RecipeForm = ({
           </button>
         </span>
         <textarea
-          rows={5}
+          className="recipe-instructions-textarea"
+          rows={8}
           value={instructions}
           onChange={(event) => setInstructions(event.target.value)}
         />

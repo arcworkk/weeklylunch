@@ -25,6 +25,7 @@ export const AuthenticatedImage = ({
       return;
     }
 
+    setObjectUrl(null);
     void apiBlob(src)
       .then((blob) => {
         if (!active) return;
