@@ -26,6 +26,17 @@ export const RecipeCard = ({ recipe, onEdit, onDelete }: RecipeCardProps) => (
             {recipe.baseServings} portion{recipe.baseServings > 1 ? "s" : ""} · {formatDuration(recipe.prepTimeMinutes + recipe.cookTimeMinutes)}
           </p>
         </div>
+      </div>
+      <div className="recipe-card-tags">
+        {recipe.ingredients.slice(0, 4).map((ingredient) => (
+          <span key={ingredient.id}>{ingredient.name}</span>
+        ))}
+        {recipe.ingredients.length > 4 && <span>+{recipe.ingredients.length - 4}</span>}
+      </div>
+      <div className="recipe-card-footer">
+        {recipe.attachments.length > 0 ? (
+          <span className="recipe-attachment-count"><PaperclipIcon />{recipe.attachments.length} piece{recipe.attachments.length > 1 ? "s" : ""} jointe{recipe.attachments.length > 1 ? "s" : ""}</span>
+        ) : <span />}
         <div className="card-actions">
           <button type="button" className="secondary-button icon-button" aria-label={`Modifier ${recipe.title}`} title="Modifier la recette" onClick={() => onEdit(recipe)}>
             <EditIcon />
@@ -35,15 +46,6 @@ export const RecipeCard = ({ recipe, onEdit, onDelete }: RecipeCardProps) => (
           </button>
         </div>
       </div>
-      <div className="recipe-card-tags">
-        {recipe.ingredients.slice(0, 4).map((ingredient) => (
-          <span key={ingredient.id}>{ingredient.name}</span>
-        ))}
-        {recipe.ingredients.length > 4 && <span>+{recipe.ingredients.length - 4}</span>}
-      </div>
-      {recipe.attachments.length > 0 && (
-        <span className="recipe-attachment-count"><PaperclipIcon />{recipe.attachments.length} piece{recipe.attachments.length > 1 ? "s" : ""} jointe{recipe.attachments.length > 1 ? "s" : ""}</span>
-      )}
     </div>
   </article>
 );

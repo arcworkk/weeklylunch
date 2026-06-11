@@ -233,6 +233,7 @@ export const RecipeForm = ({
           Personnes de reference
           <input
             type="number"
+            inputMode="numeric"
             min="1"
             value={baseServings}
             onChange={(event) => setBaseServings(event.target.value)}
@@ -243,6 +244,7 @@ export const RecipeForm = ({
           Preparation
           <input
             type="number"
+            inputMode="numeric"
             min="0"
             value={prepTimeMinutes}
             onChange={(event) => setPrepTimeMinutes(event.target.value)}
@@ -253,6 +255,7 @@ export const RecipeForm = ({
           Cuisson
           <input
             type="number"
+            inputMode="numeric"
             min="0"
             value={cookTimeMinutes}
             onChange={(event) => setCookTimeMinutes(event.target.value)}
@@ -424,6 +427,7 @@ export const RecipeForm = ({
                 Quantite
                 <input
                   type="number"
+                  inputMode="decimal"
                   min="0"
                   step="0.01"
                   value={ingredient.quantity}

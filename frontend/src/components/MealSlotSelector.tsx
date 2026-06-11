@@ -107,6 +107,7 @@ export const MealSlotSelector = ({
             Portions
             <input
               type="number"
+              inputMode="numeric"
               min="1"
               value={servings}
               onChange={(event) => setServings(event.target.value)}

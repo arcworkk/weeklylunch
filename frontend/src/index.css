@@ -627,8 +627,8 @@ h3 {
 
 .planning-board {
   display: grid;
-  grid-template-columns: 134px repeat(7, minmax(140px, 1fr));
-  min-width: 1120px;
+  grid-template-columns: 134px repeat(7, minmax(160px, 1fr));
+  min-width: 1254px;
 }
 
 .planning-board-corner,
@@ -1219,8 +1219,8 @@ h3 {
   }
 
   .planning-board {
-    grid-template-columns: 104px repeat(7, minmax(145px, 1fr));
-    min-width: 1120px;
+    grid-template-columns: 104px repeat(7, minmax(165px, 1fr));
+    min-width: 1259px;
   }
 
   .planning-board-corner,
@@ -1333,6 +1333,7 @@ h3 {
 
 .recipe-card-body {
   display: grid;
+  min-width: 0;
   align-content: space-between;
   gap: 0.85rem;
   padding: 1rem;
@@ -1343,6 +1344,23 @@ h3 {
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
+}
+
+.recipe-card-heading > div {
+  min-width: 0;
+}
+
+.recipe-card-footer,
+.recipe-detail-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.recipe-card-footer .card-actions {
+  flex-wrap: nowrap;
+  margin-left: auto;
 }
 
 .recipe-card-title {
@@ -1507,6 +1525,19 @@ h3 {
   text-transform: uppercase;
 }
 
+.recipe-detail-heading {
+  align-items: flex-start;
+}
+
+.recipe-detail-heading > div:first-child {
+  min-width: 0;
+}
+
+.recipe-detail-actions {
+  flex-wrap: nowrap;
+  flex: 0 0 auto;
+}
+
 .recipe-detail-stats {
   display: flex;
   flex-wrap: wrap;
@@ -1655,16 +1686,34 @@ h3 {
   }
 
   .recipe-card {
-    grid-template-columns: 112px minmax(0, 1fr);
+    grid-template-columns: 96px minmax(0, 1fr);
     min-height: 180px;
   }
 
-  .recipe-card-heading {
+  .recipe-card-body {
+    gap: 0.65rem;
+    padding: 0.8rem;
+  }
+
+  .recipe-card-footer {
+    align-items: flex-end;
     flex-direction: column;
   }
 
-  .recipe-card-heading .card-actions {
+  .recipe-card-footer .card-actions {
     align-self: flex-end;
+  }
+
+  .recipe-attachment-count {
+    align-self: flex-start;
+  }
+
+  .recipe-detail-heading {
+    align-items: flex-start;
+  }
+
+  .recipe-detail-actions {
+    margin-left: auto;
   }
 
   .recipe-detail-media {

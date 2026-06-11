@@ -123,6 +123,7 @@ export const MealForm = ({
         Portions souhaitees
         <input
           type="number"
+          inputMode="numeric"
           min="1"
           value={desiredServings}
           onChange={(event) => setDesiredServings(event.target.value)}
