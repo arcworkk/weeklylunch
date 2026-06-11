@@ -1353,6 +1353,7 @@ h3 {
 .recipe-card-footer,
 .recipe-detail-heading {
   display: flex;
+  min-width: 0;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
@@ -1696,12 +1697,14 @@ h3 {
   }
 
   .recipe-card-footer {
+    width: 100%;
     align-items: flex-end;
     flex-direction: column;
   }
 
   .recipe-card-footer .card-actions {
     align-self: flex-end;
+    margin-left: 0;
   }
 
   .recipe-attachment-count {
