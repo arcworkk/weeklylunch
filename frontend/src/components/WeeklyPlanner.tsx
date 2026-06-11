@@ -1,4 +1,13 @@
-import { FormEvent, Fragment, useEffect, useRef, useState } from "react";
+import {
+  CSSProperties,
+  FormEvent,
+  Fragment,
+  KeyboardEvent,
+  PointerEvent,
+  useEffect,
+  useRef,
+  useState
+} from "react";
 import { Meal } from "../types/meal";
 import {
   MEAL_SLOTS,
@@ -47,6 +56,38 @@ const daysByJavaScriptIndex: WeekDay[] = [
   "SATURDAY"
 ];
 
+const DEFAULT_DAY_WIDTH = 165;
+const MIN_DAY_WIDTH = 145;
+const MAX_DAY_WIDTH = 420;
+const DAY_WIDTH_STORAGE_KEY = "weeklylunch_planner_day_widths";
+
+type DayWidths = Record<WeekDay, number>;
+
+const defaultDayWidths = () =>
+  Object.fromEntries(
+    WEEK_DAYS.map((day) => [day.value, DEFAULT_DAY_WIDTH])
+  ) as DayWidths;
+
+const getInitialDayWidths = (): DayWidths => {
+  try {
+    const savedWidths = JSON.parse(
+      localStorage.getItem(DAY_WIDTH_STORAGE_KEY) ?? "{}"
+    ) as Partial<DayWidths>;
+
+    return Object.fromEntries(
+      WEEK_DAYS.map((day) => [
+        day.value,
+        Math.min(
+          MAX_DAY_WIDTH,
+          Math.max(MIN_DAY_WIDTH, Number(savedWidths[day.value]) || DEFAULT_DAY_WIDTH)
+        )
+      ])
+    ) as DayWidths;
+  } catch {
+    return defaultDayWidths();
+  }
+};
+
 export const WeeklyPlanner = ({
   plans,
   selectedPlan,
@@ -63,6 +104,8 @@ export const WeeklyPlanner = ({
   const [newPlanName, setNewPlanName] = useState("");
   const [planSearch, setPlanSearch] = useState("");
   const [saving, setSaving] = useState(false);
+  const [dayWidths, setDayWidths] = useState<DayWidths>(getInitialDayWidths);
+  const [resizingDay, setResizingDay] = useState<WeekDay | null>(null);
   const planningShellRef = useRef<HTMLDivElement>(null);
   const autoFocusedPlanRef = useRef<string | null>(null);
   const currentDay = daysByJavaScriptIndex[new Date().getDay()];
@@ -70,6 +113,71 @@ export const WeeklyPlanner = ({
   const filteredPlans = plans.filter((plan) =>
     plan.name.toLocaleLowerCase("fr").includes(normalizedPlanSearch)
   );
+  const planningGridStyle = {
+    ...Object.fromEntries(
+      WEEK_DAYS.map((day) => [
+        `--planner-${day.value.toLowerCase()}-width`,
+        `${dayWidths[day.value]}px`
+      ])
+    )
+  } as CSSProperties;
+
+  useEffect(() => {
+    localStorage.setItem(DAY_WIDTH_STORAGE_KEY, JSON.stringify(dayWidths));
+  }, [dayWidths]);
+
+  const setDayWidth = (day: WeekDay, width: number) => {
+    setDayWidths((current) => ({
+      ...current,
+      [day]: Math.min(MAX_DAY_WIDTH, Math.max(MIN_DAY_WIDTH, Math.round(width)))
+    }));
+  };
+
+  const startDayResize = (event: PointerEvent<HTMLDivElement>, day: WeekDay) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const startX = event.clientX;
+    const startWidth = dayWidths[day];
+    setResizingDay(day);
+    document.body.classList.add("is-resizing-planner-column");
+
+    const handlePointerMove = (moveEvent: globalThis.PointerEvent) => {
+      setDayWidth(day, startWidth + moveEvent.clientX - startX);
+    };
+
+    const stopResize = () => {
+      setResizingDay(null);
+      document.body.classList.remove("is-resizing-planner-column");
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", stopResize);
+      window.removeEventListener("pointercancel", stopResize);
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", stopResize);
+    window.addEventListener("pointercancel", stopResize);
+  };
+
+  const handleResizeKeyDown = (
+    event: KeyboardEvent<HTMLDivElement>,
+    day: WeekDay
+  ) => {
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      setDayWidth(day, dayWidths[day] + (event.key === "ArrowRight" ? 10 : -10));
+    }
+
+    if (event.key === "Home") {
+      event.preventDefault();
+      setDayWidth(day, MIN_DAY_WIDTH);
+    }
+
+    if (event.key === "End") {
+      event.preventDefault();
+      setDayWidth(day, MAX_DAY_WIDTH);
+    }
+  };
 
   const handlePlanSearch = (value: string) => {
     setPlanSearch(value);
@@ -225,7 +333,7 @@ export const WeeklyPlanner = ({
       {selectedPlan ? (
         <>
           <div className="planning-board-shell" ref={planningShellRef}>
-            <div className="planning-board">
+            <div className="planning-board" style={planningGridStyle}>
               <div className="planning-board-corner">
                 <span>Planning rempli</span>
                 <strong>{selectedPlan.plannedMeals.length} sur 28</strong>
@@ -238,7 +346,7 @@ export const WeeklyPlanner = ({
 
                 return (
                   <div
-                    className={`planning-day-header${day.value === currentDay ? " is-current-day" : ""}`}
+                    className={`planning-day-header${day.value === currentDay ? " is-current-day" : ""}${resizingDay === day.value ? " is-resizing" : ""}`}
                     data-current-day={day.value === currentDay ? "true" : undefined}
                     key={day.value}
                   >
@@ -249,6 +357,22 @@ export const WeeklyPlanner = ({
                       )}
                     </div>
                     <span>{plannedCount} repas</span>
+                    <div
+                      aria-label={`Redimensionner la colonne ${day.label}`}
+                      aria-orientation="vertical"
+                      aria-valuemax={MAX_DAY_WIDTH}
+                      aria-valuemin={MIN_DAY_WIDTH}
+                      aria-valuenow={dayWidths[day.value]}
+                      className="planning-column-resizer"
+                      role="separator"
+                      tabIndex={0}
+                      title="Glissez pour redimensionner. Double-cliquez pour reinitialiser."
+                      onDoubleClick={() => setDayWidth(day.value, DEFAULT_DAY_WIDTH)}
+                      onKeyDown={(event) => handleResizeKeyDown(event, day.value)}
+                      onPointerDown={(event) => startDayResize(event, day.value)}
+                    >
+                      <span aria-hidden="true" />
+                    </div>
                   </div>
                 );
               })}
