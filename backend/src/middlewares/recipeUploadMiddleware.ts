@@ -15,6 +15,7 @@ const imageTypes = new Set([
   "image/avif"
 ]);
 const imageExtensions = /\.(?:avif|gif|jpe?g|png|webp)$/i;
+const attachmentExtensions = /\.(?:avif|docx|gif|jpe?g|pdf|png|txt|webp)$/i;
 const attachmentTypes = new Set([
   ...imageTypes,
   "application/pdf",
@@ -44,7 +45,7 @@ const upload = multer({
       file.fieldname === "thumbnail"
         ? imageTypes.has(file.mimetype) || imageExtensions.test(file.originalname)
         : file.fieldname === "attachments" &&
-          (attachmentTypes.has(file.mimetype) || imageExtensions.test(file.originalname));
+          (attachmentTypes.has(file.mimetype) || attachmentExtensions.test(file.originalname));
 
     if (!allowed) {
       const error = new Error("Unsupported recipe file type") as Error & { status: number };

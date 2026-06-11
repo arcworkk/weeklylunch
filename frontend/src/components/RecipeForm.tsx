@@ -2,8 +2,8 @@ import { FormEvent, useEffect, useId, useRef, useState } from "react";
 import { useConfirm } from "../hooks/useConfirm";
 import { IngredientInput } from "../types/ingredient";
 import { Recipe, RecipeAttachment, RecipeSubmission } from "../types/recipe";
-import { AddIcon, DeleteIcon, ImageIcon, PaperclipIcon } from "./ActionIcons";
-import { AttachmentLink } from "./AttachmentLink";
+import { AddIcon, CollapseIcon, DeleteIcon, ExpandIcon, ImageIcon, PaperclipIcon } from "./ActionIcons";
+import { AttachmentPreview } from "./AttachmentPreview";
 import { AuthenticatedImage } from "./AuthenticatedImage";
 
 type RecipeFormProps = {
@@ -65,7 +65,10 @@ export const RecipeForm = ({
   const [attachments, setAttachments] = useState<File[]>([]);
   const [retainedAttachments, setRetainedAttachments] = useState<RecipeAttachment[]>([]);
   const [thumbnailError, setThumbnailError] = useState("");
+  const [attachmentError, setAttachmentError] = useState("");
+  const [instructionsExpanded, setInstructionsExpanded] = useState(false);
   const thumbnailInputId = useId();
+  const instructionsInputId = useId();
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const attachmentInputRef = useRef<HTMLInputElement>(null);
   const firstIngredientInputRef = useRef<HTMLInputElement>(null);
@@ -90,6 +93,8 @@ export const RecipeForm = ({
       setRemoveThumbnail(false);
       setAttachments([]);
       setThumbnailError("");
+      setAttachmentError("");
+      setInstructionsExpanded(false);
       return;
     }
 
@@ -104,6 +109,8 @@ export const RecipeForm = ({
     setRemoveThumbnail(false);
     setAttachments([]);
     setThumbnailError("");
+    setAttachmentError("");
+    setInstructionsExpanded(false);
   }, [initialRecipe]);
 
   useEffect(() => {
@@ -247,8 +254,36 @@ export const RecipeForm = ({
 
   const addAttachments = (files: FileList | null) => {
     if (!files) return;
+
+    const allowedTypes = new Set([
+      "image/jpeg", "image/jpg", "image/pjpeg", "image/png", "image/x-png",
+      "image/webp", "image/gif", "image/avif", "application/pdf", "text/plain",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ]);
+    const allowedExtension = /\.(?:avif|docx|gif|jpe?g|pdf|png|txt|webp)$/i;
+    const selectedFiles = Array.from(files);
+    const invalidFile = selectedFiles.find((file) =>
+      (!allowedTypes.has(file.type) && !allowedExtension.test(file.name)) ||
+      file.size > 10 * 1024 * 1024
+    );
+
+    if (invalidFile) {
+      setAttachmentError(
+        invalidFile.size > 10 * 1024 * 1024
+          ? `Le fichier ${invalidFile.name} depasse 10 Mo.`
+          : `Le format de ${invalidFile.name} n'est pas pris en charge.`
+      );
+      if (attachmentInputRef.current) attachmentInputRef.current.value = "";
+      return;
+    }
+
     const remaining = Math.max(0, 5 - retainedAttachments.length - attachments.length);
-    setAttachments((current) => [...current, ...Array.from(files).slice(0, remaining)]);
+    if (selectedFiles.length > remaining) {
+      setAttachmentError("Une recette peut contenir au maximum 5 pieces jointes.");
+    } else {
+      setAttachmentError("");
+    }
+    setAttachments((current) => [...current, ...selectedFiles.slice(0, remaining)]);
     if (attachmentInputRef.current) attachmentInputRef.current.value = "";
   };
 
@@ -305,14 +340,7 @@ export const RecipeForm = ({
           onChange={(event) => handleThumbnailChange(event.target.files?.[0])}
         />
         <label className="recipe-media-editor recipe-media-picker" htmlFor={thumbnailInputId}>
-          <div className="recipe-media-editor-copy">
-            <ImageIcon />
-            <div>
-              <strong>Miniature de la recette</strong>
-              <span>Facultative, image de 10 Mo maximum.</span>
-            </div>
-          </div>
-          <div className="recipe-thumbnail-editor">
+          <div className="recipe-thumbnail-preview">
             {thumbnailPreview ? (
               <img src={thumbnailPreview} alt="Nouvelle miniature" />
             ) : (
@@ -321,6 +349,15 @@ export const RecipeForm = ({
                 alt={initialRecipe?.title ?? "Recette sans image"}
               />
             )}
+          </div>
+          <div className="recipe-media-picker-content">
+            <div className="recipe-media-editor-copy">
+              <ImageIcon />
+              <div>
+                <strong>Miniature de la recette</strong>
+                <span>Facultative, image de 10 Mo maximum.</span>
+              </div>
+            </div>
             <div className="recipe-media-picker-copy">
               <strong>{thumbnail?.name ?? (initialRecipe?.thumbnailUrl && !removeThumbnail ? "Image enregistree" : "Ajouter une image")}</strong>
               <span>Appuyez ici pour choisir une photo ou un fichier image.</span>
@@ -335,9 +372,20 @@ export const RecipeForm = ({
         )}
       </section>
 
-      <label className="instructions-field">
-        <span className="instructions-field-heading">
-          <span>Etapes de realisation</span>
+      <section className="instructions-field">
+        <div className="instructions-field-heading">
+          <label htmlFor={instructionsInputId}>Etapes de realisation</label>
+          <div className="instructions-field-actions">
+            <button
+              type="button"
+              className="ghost-button icon-button"
+              aria-label={instructionsExpanded ? "Reduire la zone des etapes" : "Agrandir la zone des etapes"}
+              title={instructionsExpanded ? "Reduire" : "Agrandir"}
+              aria-pressed={instructionsExpanded}
+              onClick={() => setInstructionsExpanded((current) => !current)}
+            >
+              {instructionsExpanded ? <CollapseIcon /> : <ExpandIcon />}
+            </button>
           <button
             type="button"
             className="secondary-button icon-button"
@@ -348,9 +396,11 @@ export const RecipeForm = ({
           >
             <PaperclipIcon />
           </button>
-        </span>
+          </div>
+        </div>
         <textarea
-          className="recipe-instructions-textarea"
+          id={instructionsInputId}
+          className={`recipe-instructions-textarea${instructionsExpanded ? " is-expanded" : ""}`}
           rows={8}
           value={instructions}
           onChange={(event) => setInstructions(event.target.value)}
@@ -360,38 +410,27 @@ export const RecipeForm = ({
           className="visually-hidden"
           type="file"
           multiple
-          accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          accept="image/jpeg,image/png,image/webp,image/gif,image/avif,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.jpg,.jpeg,.png,.webp,.gif,.avif,.pdf,.txt,.docx"
           onChange={(event) => addAttachments(event.target.files)}
         />
-      </label>
+        {attachmentError && <p className="error-text attachment-error">{attachmentError}</p>}
+      </section>
 
       {(retainedAttachments.length > 0 || attachments.length > 0) && (
-        <div className="attachment-editor">
+        <div className="attachment-preview-grid">
           {retainedAttachments.map((attachment) => (
-            <div className="attachment-editor-item" key={attachment.id}>
-              <AttachmentLink attachment={attachment} />
-              <button
-                type="button"
-                className="danger-button icon-button"
-                aria-label={`Retirer ${attachment.originalName}`}
-                onClick={() => setRetainedAttachments((current) => current.filter((item) => item.id !== attachment.id))}
-              >
-                <DeleteIcon />
-              </button>
-            </div>
+            <AttachmentPreview
+              key={attachment.id}
+              attachment={attachment}
+              onRemove={() => setRetainedAttachments((current) => current.filter((item) => item.id !== attachment.id))}
+            />
           ))}
           {attachments.map((attachment, index) => (
-            <div className="attachment-editor-item" key={`${attachment.name}-${index}`}>
-              <span className="pending-attachment"><PaperclipIcon />{attachment.name}</span>
-              <button
-                type="button"
-                className="danger-button icon-button"
-                aria-label={`Retirer ${attachment.name}`}
-                onClick={() => setAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index))}
-              >
-                <DeleteIcon />
-              </button>
-            </div>
+            <AttachmentPreview
+              key={`${attachment.name}-${index}`}
+              file={attachment}
+              onRemove={() => setAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+            />
           ))}
         </div>
       )}

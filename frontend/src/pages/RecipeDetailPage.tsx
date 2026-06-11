@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { DeleteIcon } from "../components/ActionIcons";
-import { AttachmentLink } from "../components/AttachmentLink";
+import { AttachmentPreview } from "../components/AttachmentPreview";
 import { AuthenticatedImage } from "../components/AuthenticatedImage";
 import { EditIcon } from "../components/EditIcon";
 import { FormModal } from "../components/FormModal";
@@ -126,8 +126,8 @@ export const RecipeDetailPage = () => {
           <h2>Etapes de realisation</h2>
           <p className="instructions">{recipe.instructions || "Aucune instruction renseignee."}</p>
           {recipe.attachments.length > 0 && (
-            <div className="recipe-attachments">
-              {recipe.attachments.map((attachment) => <AttachmentLink key={attachment.id} attachment={attachment} />)}
+            <div className="attachment-preview-grid recipe-attachments">
+              {recipe.attachments.map((attachment) => <AttachmentPreview key={attachment.id} attachment={attachment} />)}
             </div>
           )}
         </section>
