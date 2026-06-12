@@ -28,6 +28,7 @@ fi
 docker compose -f "${COMPOSE_FILE}" build --pull
 docker compose -f "${COMPOSE_FILE}" run --rm --no-deps backend npm run prisma:migrate
 docker compose -f "${COMPOSE_FILE}" up -d --remove-orphans
+docker compose -f "${COMPOSE_FILE}" run --rm --no-deps backend npm run recipes:images
 
 for attempt in {1..30}; do
   if curl --fail --silent http://127.0.0.1:3001/api/health >/dev/null && \

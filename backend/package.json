@@ -8,6 +8,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "admin:create": "tsx src/scripts/createAdmin.ts",
+    "recipes:images": "tsx src/scripts/enrichRecipeThumbnails.ts",
     "prisma:migrate": "node scripts/prisma-migrate.cjs",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:seed": "npm run prisma:seed:dev",
