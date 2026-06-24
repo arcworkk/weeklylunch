@@ -28,7 +28,7 @@ jobs:
       FRONTEND_URL: http://localhost:5173
       ADMIN_EMAIL: admin-ci@example.com
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v5
         with:
           node-version: 20
@@ -48,7 +48,7 @@ jobs:
     env:
       VITE_API_URL: /api
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v5
         with:
           node-version: 20
@@ -62,7 +62,7 @@ jobs:
     name: Production configuration
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Prepare non-secret validation environment
         run: cp backend/.env.production.example backend/.env
       - run: docker compose -f docker-compose.prod.yml config --quiet
