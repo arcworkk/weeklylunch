@@ -39,7 +39,7 @@ jobs:
             echo "value=$VERIFIED_SHA" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ steps.revision.outputs.value }}
 
